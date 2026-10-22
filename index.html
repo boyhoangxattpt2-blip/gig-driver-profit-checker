@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Gig Driver Profit Checker: enter payout, real total miles, and minutes — see your true net $/hour after driving costs. Free, offline, no signup.">
+<title>Gig Driver Profit Checker — Real money, not shiny payout</title>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#111c33; --card:#ffffff; --ink:#0f172a; --muted:#475569;
+    --line:#e2e8f0; --accent:#2563eb; --accent-d:#1d4ed8;
+    --good:#15803d; --good-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7;
+    --bad:#b91c1c; --bad-bg:#fee2e2; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5;
+  }
+  .wrap{max-width:600px; margin:0 auto; padding:0 16px 64px}
+  header.hero{
+    background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#0ea5e9 100%);
+    color:#fff; padding:34px 20px 26px; border-radius:0 0 28px 28px;
+    text-align:center; margin:0 -16px 20px;
+  }
+  .kicker{display:inline-block; font-size:.72rem; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; background:rgba(255,255,255,.16); padding:6px 12px;
+    border-radius:999px; margin-bottom:12px}
+  h1{font-size:1.7rem; margin:.2em 0 .3em; line-height:1.2}
+  .tagline{font-size:1.05rem; font-weight:700; color:#e0f2fe; margin:0}
+  .sub{font-size:.9rem; color:#dbeafe; margin:.5em 0 0; opacity:.92}
+  .card{background:var(--card); border-radius:var(--radius); padding:18px;
+    margin:16px 0; box-shadow:0 10px 30px rgba(2,6,23,.35)}
+  .card h2{font-size:1.12rem; margin:0 0 4px}
+  .hint{font-size:.85rem; color:var(--muted); margin:0 0 12px}
+  .seg{display:flex; gap:8px; margin:8px 0 4px}
+  .seg button{
+    flex:1; padding:12px 8px; border-radius:12px; border:2px solid var(--line);
+    background:#f8fafc; font-weight:800; font-size:1rem; cursor:pointer; color:var(--ink);
+    min-height:52px;
+  }
+  .seg button[aria-pressed="true"]{border-color:var(--accent); background:#eff6ff; color:var(--accent-d)}
+  .seg button:focus-visible, input:focus-visible, button.cta:focus-visible, .chip:focus-visible, .copybtn:focus-visible{
+    outline:3px solid #93c5fd; outline-offset:2px}
+  .field{margin:14px 0}
+  .field label{display:block; font-weight:700; margin-bottom:6px; font-size:.95rem}
+  .field label .unit{font-weight:600; color:var(--muted); font-size:.82rem}
+  .inputwrap{display:flex; align-items:center; gap:8px}
+  .prefix{font-weight:800; color:var(--muted); min-width:1.2em; text-align:right}
+  input[type=number], input[type=text]{
+    width:100%; padding:12px 14px; font-size:1.05rem; border:2px solid var(--line);
+    border-radius:12px; background:#fff; color:var(--ink); min-height:52px;
+  }
+  .fhelp{font-size:.8rem; color:var(--muted); margin:6px 0 0}
+  .ferr{font-size:.82rem; color:var(--bad); font-weight:700; margin:6px 0 0; display:none}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+  .chip{border:1.5px solid var(--line); background:#f1f5f9; border-radius:999px;
+    padding:8px 14px; font-size:.85rem; font-weight:700; cursor:pointer; color:var(--ink); min-height:40px}
+  .chip:hover{border-color:var(--accent)}
+  .verdict{border-radius:14px; padding:16px; text-align:center; margin:4px 0 14px}
+  .verdict .vlabel{font-size:1.5rem; font-weight:900; letter-spacing:.06em; margin:0}
+  .verdict .vexp{font-size:.92rem; margin:.5em 0 0}
+  .v-accept{background:var(--good-bg); color:#14532d; border:2px solid var(--good)}
+  .v-borderline{background:var(--warn-bg); color:#78350f; border:2px solid var(--warn)}
+  .v-skip{background:var(--bad-bg); color:#7f1d1d; border:2px solid var(--bad)}
+  .v-idle{background:#f1f5f9; color:var(--muted); border:2px dashed #cbd5e1}
+  .nums{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0}
+  .num{background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:12px}
+  .num .k{font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
+  .num .v{font-size:1.35rem; font-weight:900; margin-top:2px}
+  .num.hero-num{grid-column:1/-1; background:#eff6ff; border-color:#bfdbfe}
+  .num.hero-num .v{font-size:1.9rem; color:var(--accent-d)}
+  details{border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin:10px 0; background:#fbfdff}
+  details summary{font-weight:800; cursor:pointer; font-size:.95rem}
+  .math{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.85rem;
+    background:#0f172a; color:#e2e8f0; border-radius:10px; padding:12px; overflow-x:auto; white-space:pre-wrap}
+  ul.assume{margin:8px 0; padding-left:20px; font-size:.88rem; color:#334155}
+  ul.assume li{margin:4px 0}
+  .offer{border:2px solid var(--line); border-radius:14px; padding:14px; margin:12px 0; position:relative; background:#fff}
+  .offer.best{border-color:var(--good); background:#f0fdf4}
+  .offer .tag{display:inline-block; font-size:.68rem; font-weight:800; letter-spacing:.1em;
+    background:#334155; color:#fff; border-radius:6px; padding:3px 8px; margin-bottom:8px}
+  .offer.best .tag{background:var(--good)}
+  .offer h3{margin:0 0 6px; font-size:1.05rem}
+  .offer .oline{font-size:.9rem; color:var(--muted); margin:2px 0}
+  .offer .ores{font-size:.95rem; font-weight:700; margin:8px 0}
+  .offer button{width:100%; padding:12px; border-radius:10px; border:2px solid var(--accent);
+    background:#fff; color:var(--accent-d); font-weight:800; font-size:.95rem; cursor:pointer; min-height:48px}
+  .offer button:hover{background:#eff6ff}
+  .rankline{font-size:.85rem; color:var(--muted); margin:8px 0 0}
+  .cta{background:linear-gradient(135deg,#0ea5e9,#2563eb); color:#fff; border-radius:var(--radius);
+    padding:22px 18px; margin:24px 0; text-align:center}
+  .cta h2{margin:0 0 8px; font-size:1.2rem; color:#fff}
+  .cta p{font-size:.9rem; margin:8px 0; color:#e0f2fe}
+  .cta a.bigbtn{display:inline-block; background:#fff; color:var(--accent-d); font-weight:900;
+    padding:14px 26px; border-radius:12px; text-decoration:none; font-size:1.05rem; margin:10px 0; min-height:52px}
+  .disclosure{font-size:.75rem; color:#cbd5e1; margin-top:10px}
+  .built{font-size:.85rem; color:#cbd5e1; text-align:center; margin:6px 0 0}
+  .copybtn{background:#1e293b; color:#fff; border:1px solid #475569; border-radius:10px;
+    padding:10px 16px; font-weight:700; cursor:pointer; min-height:44px; font-size:.9rem}
+  .promptbox{background:#0f172a; color:#e2e8f0; border-radius:12px; padding:14px; font-size:.88rem; margin:10px 0}
+  footer.site{color:#94a3b8; font-size:.78rem; text-align:center; padding:8px 20px 40px}
+  footer.site a{color:#93c5fd}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+  @media (min-width:640px){ h1{font-size:2rem} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="kicker">For DoorDash · Uber Eats · courier drivers</span>
+    <h1>Gig Driver Profit Checker</h1>
+    <p class="tagline">Real money, not shiny payout.</p>
+    <p class="sub">Enter the payout, your <em>real</em> total miles, and minutes — see what you actually keep per hour.</p>
+  </header>
+
+  <main>
+    <!-- REGION -->
+    <section class="card" aria-labelledby="region-h">
+      <h2 id="region-h">Where do you drive?</h2>
+      <p class="hint">Switching changes labels and defaults only — no currency conversion is ever applied.</p>
+      <div class="seg" role="group" aria-label="Driving region">
+        <button type="button" id="btn-us" aria-pressed="true">🇺🇸 US · USD / mi</button>
+        <button type="button" id="btn-ca" aria-pressed="false">🇨🇦 Canada · CAD / km</button>
+      </div>
+    </section>
+
+    <!-- CALCULATOR -->
+    <section class="card" aria-labelledby="calc-h">
+      <h2 id="calc-h">The offer on your screen</h2>
+      <p class="hint">Type what the app shows <strong>plus</strong> what it hides. Results update live.</p>
+
+      <div class="field">
+        <label for="in-payout">Total payout, tips included <span class="unit" data-cur-label>($)</span></label>
+        <div class="inputwrap"><span class="prefix" data-cur-sym>$</span>
+          <input id="in-payout" type="number" inputmode="decimal" min="0" step="0.01" value="12" aria-describedby="payout-h">
+        </div>
+        <p class="fhelp" id="payout-h">The full amount you receive, base + tips + bonuses.</p>
+        <p class="ferr" id="err-payout"></p>
+      </div>
+
+      <div class="field">
+        <label for="in-dist">Entire driving distance, <em>including</em> empty return / deadhead <span class="unit" data-dist-label>(mi)</span></label>
+        <div class="inputwrap"><span class="prefix"></span>
+          <input id="in-dist" type="number" inputmode="decimal" min="0" step="0.1" value="8" aria-describedby="dist-h">
+        </div>
+        <p class="fhelp" id="dist-h">No map, no auto-routing here — enter your honest door-to-door-to-door total. Miles back empty still burn fuel.</p>
+        <p class="ferr" id="err-dist"></p>
+      </div>
+
+      <div class="field">
+        <label for="in-min">Total task minutes, including waiting <span class="unit">(min)</span></label>
+        <div class="inputwrap"><span class="prefix"></span>
+          <input id="in-min" type="number" inputmode="decimal" min="1" step="1" value="35" aria-describedby="min-h">
+        </div>
+        <p class="fhelp" id="min-h">Pickup wait, traffic, drop-off — all of it. Must be at least 1 minute.</p>
+        <p class="ferr" id="err-min"></p>
+      </div>
+
+      <div class="field">
+        <label for="in-rate">All-in vehicle cost <span class="unit" data-rate-label>($/mi)</span></label>
+        <div class="inputwrap"><span class="prefix" data-cur-sym>$</span>
+          <input id="in-rate" type="number" inputmode="decimal" min="0" step="0.01" value="0.35" aria-describedby="rate-h">
+        </div>
+        <p class="fhelp" id="rate-h"><strong>One combined number:</strong> fuel + maintenance + tires + depreciation. Don't add fuel separately — that would double-count.</p>
+        <div class="chips" id="rate-presets" role="group" aria-label="Vehicle cost presets"></div>
+        <p class="ferr" id="err-rate"></p>
+      </div>
+
+      <div class="field">
+        <label for="in-toll">Extra tolls / parking <span class="unit" data-cur-label>($)</span></label>
+        <div class="inputwrap"><span class="prefix" data-cur-sym>$</span>
+          <input id="in-toll" type="number" inputmode="decimal" min="0" step="0.01" value="0" aria-describedby="toll-h">
+        </div>
+        <p class="fhelp" id="toll-h">Kept separate from the per-<span data-dist-word>mile</span> rate on purpose — never counted twice.</p>
+        <p class="ferr" id="err-toll"></p>
+      </div>
+
+      <div class="field">
+        <label for="in-target">Your required net earnings <span class="unit" data-target-label>($/hr)</span></label>
+        <div class="inputwrap"><span class="prefix" data-cur-sym>$</span>
+          <input id="in-target" type="number" inputmode="decimal" min="0" step="0.5" value="18" aria-describedby="target-h">
+        </div>
+        <p class="fhelp" id="target-h">Your personal minimum <em>after</em> costs. The verdict is judged against this number.</p>
+        <p class="ferr" id="err-target"></p>
+      </div>
+
+      <div class="chips">
+        <button type="button" class="chip" id="btn-test">🧪 Load guaranteed test scenario</button>
+        <button type="button" class="chip" id="btn-reset">↺ Reset</button>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="card" aria-labelledby="res-h" aria-live="polite" aria-atomic="true">
+      <h2 id="res-h">Your real numbers</h2>
+      <div class="verdict v-idle" id="verdict">
+        <p class="vlabel" id="v-label">—</p>
+        <p class="vexp" id="v-exp">Enter an offer above to get a verdict.</p>
+      </div>
+      <div class="nums">
+        <div class="num hero-num"><div class="k">Net hourly (after all costs)</div><div class="v" id="r-nethr">—</div></div>
+        <div class="num"><div class="k">Net earnings</div><div class="v" id="r-net">—</div></div>
+        <div class="num"><div class="k" data-perunit-k>Net per mi</div><div class="v" id="r-netunit">—</div></div>
+        <div class="num"><div class="k">Gross hourly (what app flashes)</div><div class="v" id="r-grosshr">—</div></div>
+        <div class="num"><div class="k">Operating cost</div><div class="v" id="r-opcost">—</div></div>
+      </div>
+      <details>
+        <summary>Show the exact math</summary>
+        <div class="math" id="mathbox">—</div>
+      </details>
+      <details>
+        <summary>Assumptions (read this)</summary>
+        <ul class="assume">
+          <li>Payout is the total you receive, tips and bonuses included.</li>
+          <li>Distance must include deadhead — every <span data-dist-word>mile</span> driven for the job, loaded or empty.</li>
+          <li>Minutes include waiting at pickup, traffic, and drop-off. Zero time is not allowed.</li>
+          <li>The vehicle rate is one all-in figure (fuel + maintenance + tires + depreciation). Adding fuel again would double-count.</li>
+          <li>Tolls/parking are subtracted once, separately — never inside the per-<span data-dist-word>mile</span> rate.</li>
+          <li>The verdict compares <strong>net</strong> hourly pay against <strong>your</strong> minimum. BORDERLINE means within <span data-cur-sym>$</span>2/hr below your bar.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- DEMO CHALLENGE -->
+    <section class="card" aria-labelledby="demo-h">
+      <h2 id="demo-h">The challenge: which $ offer actually pays best after expenses?</h2>
+      <p class="hint">Three <strong>HYPOTHETICAL</strong> offers. Same car, same costs, your $18/hr bar. The biggest payout is <em>not</em> the winner — tap one to test it live above.</p>
+      <div id="offers"></div>
+      <p class="rankline" id="rankline"></p>
+      <details>
+        <summary>How the demo is scored</summary>
+        <ul class="assume">
+          <li>All three offers are <strong>HYPOTHETICAL</strong> — made-up numbers to demonstrate the math, not real gigs.</li>
+          <li>Ranked by <strong>net $/hour after all driving costs</strong>, because your hour is what you actually sell.</li>
+          <li>Verdicts use the $18/hr bar: only offers meeting it get ACCEPT.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- BUILD-YOUR-OWN -->
+    <section class="card" aria-labelledby="prompt-h">
+      <h2 id="prompt-h">Steal this idea</h2>
+      <p class="hint">Copy the one-paragraph prompt below, paste it into Muse, swap in your own idea — get your own tiny app.</p>
+      <div class="promptbox" id="promptbox">Act as my personal app builder and create a single standalone index.html file (embedded CSS and JavaScript, no external libraries, no tracking, no cookies, works offline) for this idea: [describe your idea in 2–3 sentences — who it is for, the 3–5 inputs it needs, and the one result it must compute]. Make it mobile-first, polished and accessible, validate every input (reject negatives, block zero-division, handle NaN), show the exact math behind each result, and include three clearly-labeled HYPOTHETICAL demo examples. Ask me one clarifying question only if something is truly ambiguous; otherwise build it, test the formulas in code, fix any failures, and deliver the working file.</div>
+      <button type="button" class="copybtn" id="btn-copy">📋 Copy prompt</button>
+      <p class="fhelp" id="copy-msg" role="status"></p>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" aria-labelledby="cta-h">
+      <h2 id="cta-h">Want Muse to build YOUR own tiny app?</h2>
+      <p class="built">Tool built with Muse AI from a real courier's idea.</p>
+      <a class="bigbtn" href="https://muse.ai/join">Sign up at muse.ai/join</a>
+      <p>Redeem code <strong>03THHA</strong> in Settings within 48 hours of joining to get 1&nbsp;billion bonus tokens.</p>
+      <p class="disclosure">Referral disclosure: 03THHA is the builder's personal invite code — if you use it, both you and the inviter may each receive bonus tokens. Intended for new eligible adults (18+) in supported US/CA regions; redeem within 48h of joining. Eligibility and token credit are decided by Muse, not guaranteed for everyone. No purchase necessary.</p>
+    </section>
+  </main>
+
+  <footer class="site">
+    Free · offline · no login · no tracking · no cookies. Your numbers never leave this page.<br>
+    Built with <a href="https://muse.ai">Muse AI</a> from a real courier's idea.
+  </footer>
+</div>
+
+<script>
+'use strict';
+/* ============ PURE LOGIC (no DOM) — unit-tested in Node ============ */
+function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
+
+var REGIONS = {
+  us: {
+    name:'United States', currency:'USD', sym:'$', dist:'mi', distWord:'mile',
+    rateDefault: 0.35,
+    presets: [ ['Compact car',0.30], ['Sedan (typical)',0.35], ['SUV / truck',0.45], ['EV',0.18] ]
+  },
+  ca: {
+    name:'Canada', currency:'CAD', sym:'CA$', dist:'km', distWord:'kilometre',
+    rateDefault: 0.22,
+    presets: [ ['Compact car',0.19], ['Sedan (typical)',0.22], ['SUV / truck',0.28], ['EV',0.11] ]
+  }
+};
+
+/* Sanitize one numeric input. Returns {value, clamped, invalid}. */
+function sanitizeNumber(raw, opts){
+  opts = opts || {};
+  var min = ('min' in opts) ? opts.min : 0;
+  var v = (typeof raw === 'string') ? raw.trim() : raw;
+  if (v === '' || v === null || v === undefined) return { value: 0, clamped:false, invalid: opts.required ? true : false };
+  var n = Number(v);
+  if (!isFinite(n)) return { value: 0, clamped:false, invalid:true };
+  if (n < min) return { value: min, clamped:true, invalid:false };
+  return { value: n, clamped:false, invalid:false };
+}
+
+/* Core math. All costs in one currency; rate is ALL-IN per distance unit.
+   tolls are separate on purpose (no double count). */
+function calcOffer(o){
+  var payout   = o.payout,   distance = o.distance,
+      minutes  = o.minutes,  rate     = o.rate, tolls = o.tolls;
+  var bad = [payout,distance,minutes,rate,tolls].some(function(x){ return typeof x !== 'number' || !isFinite(x); });
+  if (bad)              return { ok:false, error:'Non-numeric input' };
+  if (payout < 0 || distance < 0 || rate < 0 || tolls < 0)
+                        return { ok:false, error:'Negative values are not allowed' };
+  if (!(minutes > 0))   return { ok:false, error:'Time must be at least 1 minute' };
+  var opCost    = distance * rate;
+  var net       = payout - opCost - tolls;
+  var hours     = minutes / 60;
+  var netHourly = net / hours;
+  var grossHourly = payout / hours;
+  var netPerUnit = distance > 0 ? net / distance : null;
+  return { ok:true, opCost:round2(opCost), net:round2(net),
+           netHourly:round2(netHourly), grossHourly:round2(grossHourly),
+           netPerUnit: netPerUnit === null ? null : round2(netPerUnit) };
+}
+
+/* Verdict vs the driver's own minimum. Borderline band: within 2/hr below target. */
+function verdict(netHourly, target, sym){
+  sym = sym || '$';
+  if (!(netHourly > -Infinity) || !isFinite(target) || target < 0)
+    return { level:'idle', label:'—', exp:'Enter an offer above to get a verdict.' };
+  var gap = round2(netHourly - target);
+  if (netHourly >= target)
+    return { level:'accept', label:'ACCEPT ✅',
+      exp:'This beats your '+sym+target.toFixed(2)+'/hr minimum by '+sym+Math.abs(gap).toFixed(2)+'/hr after all driving costs. Worth taking.' };
+  if (netHourly >= target - 2)
+    return { level:'borderline', label:'BORDERLINE ⚠️',
+      exp:'This lands '+sym+Math.abs(gap).toFixed(2)+'/hr under your '+sym+target.toFixed(2)+'/hr bar — close, but below it. Only take it if you are already nearby or want to stay busy.' };
+  return { level:'skip', label:'SKIP ❌',
+    exp:'This pays '+sym+Math.abs(gap).toFixed(2)+'/hr under your '+sym+target.toFixed(2)+'/hr minimum after costs. The shiny payout hides the '+ 'miles. Skip it.' };
+}
+
+/* Hypothetical demo offers (US defaults). */
+function demoOffers(){
+  return [
+    { id:'A', payout:12, distance:8,  minutes:35, rate:0.35, tolls:0 },
+    { id:'B', payout:9,  distance:3,  minutes:25, rate:0.35, tolls:0 },
+    { id:'C', payout:20, distance:15, minutes:55, rate:0.35, tolls:0 }
+  ];
+}
+
+/* Rank offers by net hourly, best first. Returns enriched copies. */
+function rankOffers(offers, target){
+  return offers.map(function(o){
+    var r = calcOffer(o);
+    return { offer:o, res:r, v: r.ok ? verdict(r.netHourly, target, '$') : null };
+  }).filter(function(x){ return x.res.ok; })
+    .sort(function(a,b){ return b.res.netHourly - a.res.netHourly; });
+}
+
+/* Guaranteed test scenario from the spec. */
+function testScenario(){
+  return { payout:12, distance:8, minutes:35, rate:0.35, tolls:0, target:18, region:'us' };
+}
+
+/* ============ UI (browser only) ============ */
+if (typeof document !== 'undefined') (function(){
+  var state = { region:'us' };
+  function $(id){ return document.getElementById(id); }
+  var inputs = { payout:$('in-payout'), dist:$('in-dist'), min:$('in-min'),
+                 rate:$('in-rate'), toll:$('in-toll'), target:$('in-target') };
+  var errs = { payout:$('err-payout'), dist:$('err-dist'), min:$('err-min'),
+               rate:$('err-rate'), toll:$('err-toll'), target:$('err-target') };
+
+  function R(){ return REGIONS[state.region]; }
+
+  function money(x){
+    if (x === null || x === undefined || !isFinite(x)) return '—';
+    return R().sym + round2(x).toFixed(2);
+  }
+
+  function applyRegion(){
+    var r = R();
+    document.querySelectorAll('[data-cur-sym]').forEach(function(el){ el.textContent = r.sym; });
+    document.querySelectorAll('[data-cur-label]').forEach(function(el){ el.textContent = '(' + r.sym + ')'; });
+    document.querySelectorAll('[data-dist-label]').forEach(function(el){ el.textContent = '(' + r.dist + ')'; });
+    document.querySelectorAll('[data-rate-label]').forEach(function(el){ el.textContent = '(' + r.sym + '/' + r.dist + ')'; });
+    document.querySelectorAll('[data-target-label]').forEach(function(el){ el.textContent = '(' + r.sym + '/hr)'; });
+    document.querySelectorAll('[data-dist-word]').forEach(function(el){ el.textContent = r.distWord; });
+    document.querySelector('[data-perunit-k]').textContent = 'Net per ' + r.dist;
+    $('btn-us').setAttribute('aria-pressed', state.region === 'us' ? 'true' : 'false');
+    $('btn-ca').setAttribute('aria-pressed', state.region === 'ca' ? 'true' : 'false');
+    if (!inputs.rate.dataset.touched) inputs.rate.value = r.rateDefault;
+    var box = $('rate-presets'); box.innerHTML = '';
+    r.presets.forEach(function(p){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip';
+      b.textContent = p[0] + ' · ' + r.sym + p[1].toFixed(2) + '/' + r.dist;
+      b.addEventListener('click', function(){
+        inputs.rate.value = p[1]; inputs.rate.dataset.touched = '1'; recalc();
+      });
+      box.appendChild(b);
+    });
+    renderDemo();
+  }
+
+  function readInputs(){
+    var out = {}, anyErr = false;
+    function one(key, el, opts, errMsg){
+      var s = sanitizeNumber(el.value, opts);
+      var e = errs[key]; e.style.display = 'none'; e.textContent = '';
+      if (s.invalid){ e.textContent = errMsg; e.style.display = 'block'; anyErr = true; }
+      else if (s.clamped){ e.textContent = 'Negative values are not allowed — treated as 0.'; e.style.display = 'block'; }
+      out[key] = s.value;
+    }
+    one('payout', inputs.payout, {min:0}, 'Enter a valid payout amount.');
+    one('dist',   inputs.dist,   {min:0}, 'Enter a valid distance.');
+    one('min',    inputs.min,    {min:0, required:true}, 'Time must be a number of at least 1 minute.');
+    one('rate',   inputs.rate,   {min:0}, 'Enter a valid cost rate.');
+    one('toll',   inputs.toll,   {min:0}, 'Enter a valid toll amount.');
+    one('target', inputs.target, {min:0}, 'Enter a valid hourly target.');
+    if (!anyErr && !(out.min > 0)){
+      errs.min.textContent = 'Time must be at least 1 minute — division by zero is not allowed.';
+      errs.min.style.display = 'block'; anyErr = true;
+    }
+    return anyErr ? null : out;
+  }
+
+  function recalc(){
+    var v = readInputs();
+    var box = $('verdict'), lab = $('v-label'), exp = $('v-exp');
+    if (!v){
+      box.className = 'verdict v-idle'; lab.textContent = '—'; exp.textContent = 'Fix the highlighted input to get a verdict.';
+      $('r-nethr').textContent = $('r-net').textContent = $('r-netunit').textContent =
+      $('r-grosshr').textContent = $('r-opcost').textContent = '—';
+      $('mathbox').textContent = '—'; return;
+    }
+    var r = calcOffer({payout:v.payout, distance:v.dist, minutes:v.min, rate:v.rate, tolls:v.toll});
+    if (!r.ok){
+      box.className = 'verdict v-idle'; lab.textContent = '—'; exp.textContent = r.error; return;
+    }
+    var vd = verdict(r.netHourly, v.target, R().sym);
+    box.className = 'verdict v-' + vd.level;
+    lab.textContent = vd.label; exp.textContent = vd.exp;
+    $('r-nethr').textContent = money(r.netHourly) + '/hr';
+    $('r-net').textContent = money(r.net);
+    $('r-netunit').textContent = (r.netPerUnit === null) ? '—' : money(r.netPerUnit) + '/' + R().dist;
+    $('r-grosshr').textContent = money(r.grossHourly) + '/hr';
+    $('r-opcost').textContent = money(r.opCost);
+    var u = R().dist, s = R().sym;
+    $('mathbox').textContent =
+      'operating cost = ' + v.dist + ' ' + u + ' × ' + s + v.rate + '/' + u + ' = ' + s + r.opCost.toFixed(2) + '\n' +
+      'net earnings   = ' + s + v.payout.toFixed(2) + ' − ' + s + r.opCost.toFixed(2) + ' − ' + s + v.toll.toFixed(2) + ' tolls = ' + s + r.net.toFixed(2) + '\n' +
+      'net hourly     = ' + s + r.net.toFixed(2) + ' ÷ (' + v.min + ' min ÷ 60) = ' + s + r.netHourly.toFixed(2) + '/hr\n' +
+      'net per ' + u + '      = ' + s + r.net.toFixed(2) + ' ÷ ' + v.dist + ' ' + u + ' = ' + (r.netPerUnit === null ? '— (no distance entered)' : s + r.netPerUnit.toFixed(2) + '/' + u) + '\n' +
+      'gross hourly   = ' + s + v.payout.toFixed(2) + ' ÷ (' + v.min + ' min ÷ 60) = ' + s + r.grossHourly.toFixed(2) + '/hr  ← what the app flashes';
+  }
+
+  function renderDemo(){
+    var host = $('offers'); host.innerHTML = '';
+    var targetRaw = sanitizeNumber(inputs.target.value, {min:0});
+    var target = targetRaw.invalid ? 18 : targetRaw.value;
+    var ranked = rankOffers(demoOffers(), target);
+    var bestId = ranked.length ? ranked[0].offer.id : null;
+    demoOffers().forEach(function(o){
+      var r = calcOffer(o);
+      var card = document.createElement('div');
+      card.className = 'offer' + (o.id === bestId ? ' best' : '');
+      var vd = verdict(r.netHourly, target, '$');
+      card.innerHTML =
+        '<span class="tag">HYPOTHETICAL' + (o.id === bestId ? ' · BEST NET $/HR' : '') + '</span>' +
+        '<h3>Offer ' + o.id + '</h3>' +
+        '<p class="oline">$' + o.payout.toFixed(2) + ' payout · ' + o.distance + ' mi total · ' + o.minutes + ' min</p>' +
+        '<p class="ores">Net ' + money(r.net) + ' · ' + money(r.netHourly) + '/hr → ' + vd.label + '</p>';
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = 'Test Offer ' + o.id + ' live above';
+      b.addEventListener('click', function(){
+        state.region = 'us'; applyRegion();
+        inputs.payout.value = o.payout; inputs.dist.value = o.distance;
+        inputs.min.value = o.minutes; inputs.rate.value = o.rate;
+        inputs.rate.dataset.touched = '1'; inputs.toll.value = o.tolls;
+        recalc();
+        $('calc-h').scrollIntoView({behavior:'smooth', block:'start'});
+      });
+      card.appendChild(b);
+      host.appendChild(card);
+    });
+    if (ranked.length){
+      $('rankline').textContent = 'Ranked by net $/hr: ' +
+        ranked.map(function(x){ return 'Offer ' + x.offer.id + ' (' + money(x.res.netHourly) + '/hr)'; }).join(' › ') +
+        '. Winner: Offer ' + bestId + '.';
+    }
+  }
+
+  $('btn-us').addEventListener('click', function(){ state.region = 'us'; applyRegion(); recalc(); });
+  $('btn-ca').addEventListener('click', function(){ state.region = 'ca'; applyRegion(); recalc(); });
+  Object.keys(inputs).forEach(function(k){
+    inputs[k].addEventListener('input', function(){
+      if (k === 'rate') inputs.rate.dataset.touched = '1';
+      recalc();
+    });
+  });
+  $('btn-test').addEventListener('click', function(){
+    var t = testScenario();
+    state.region = t.region; applyRegion();
+    inputs.payout.value = t.payout; inputs.dist.value = t.distance; inputs.min.value = t.minutes;
+    inputs.rate.value = t.rate; inputs.rate.dataset.touched = '1';
+    inputs.toll.value = t.tolls; inputs.target.value = t.target;
+    recalc();
+  });
+  $('btn-reset').addEventListener('click', function(){
+    delete inputs.rate.dataset.touched;
+    state.region = 'us'; applyRegion();
+    inputs.payout.value = 12; inputs.dist.value = 8; inputs.min.value = 35;
+    inputs.toll.value = 0; inputs.target.value = 18;
+    Object.keys(errs).forEach(function(k){ errs[k].style.display = 'none'; });
+    recalc();
+  });
+  $('btn-copy').addEventListener('click', function(){
+    var txt = $('promptbox').textContent, msg = $('copy-msg');
+    function done(ok){ msg.textContent = ok ? 'Copied — paste it into Muse and swap in your idea.' : 'Copy failed — select the text manually.'; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ done(true); }, function(){ done(false); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { done(document.execCommand('copy')); } catch(e){ done(false); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  applyRegion();
+  recalc();
+})();
+</script>
+</body>
+</html>
