@@ -4,6 +4,8 @@
 
 **[Try the working interactive demo](https://boyhoangxattpt2-blip.github.io/gig-driver-profit-checker/)** · [Download the offline HTML](https://raw.githubusercontent.com/boyhoangxattpt2-blip/gig-driver-profit-checker/main/index.html)
 
+![Actual interactive demo screenshot](screenshots/gig-driver-demo.jpg)
+
 ## The question
 
 > Would you rather take $20 for a long delivery, $12 for a medium delivery, or $9 for a short one?
